@@ -1,13 +1,12 @@
 import { JWT_SECRET } from "./config";
 import { prisma } from "./db";
 import jwt from "jsonwebtoken";
-
 export const resolvers = {
   Query: {
     events: async (
       _parent: unknown,
       _args: unknown,
-      context: { user: { email: string } }
+      context: { user?: { id: string } }
     ) => {
       if (!context.user) {
         throw new Error("Unauthorized");
@@ -23,18 +22,18 @@ export const resolvers = {
       _parent: unknown,
       _args: unknown,
       context: {
-        user: {
-          email: string;
+        user?: {
+          id: string;
         };
       }
     ) => {
       if (!context.user) {
         throw new Error("Unauthorized");
       }
-      const email = context.user.email;
+      const id = context.user.id;
       const user = await prisma.user.findFirst({
         where: {
-          email,
+          id,
         },
       });
       return user;
@@ -44,12 +43,14 @@ export const resolvers = {
     joinEvent: async (
       _parent: unknown,
       { eventId }: { eventId: string },
-      context: { user: { id: string } }
+      context: { user?: { id: string } }
     ) => {
-      const userId = context.user.id;
-
+      const user = context.user;
+      if (!user) {
+        throw new Error("unauthorized");
+      }
       const updatedUser = await prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: {
           events: {
             connect: { id: eventId },
@@ -92,7 +93,7 @@ export const resolvers = {
         },
       });
       if (!user) return null;
-      const token = jwt.sign(email, JWT_SECRET);
+      const token = jwt.sign(user.id, JWT_SECRET);
       return token;
     },
   },
