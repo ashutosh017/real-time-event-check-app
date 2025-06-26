@@ -94,7 +94,7 @@ export const resolvers = {
       });
       if (!user) return null;
       const token = jwt.sign(user.id, JWT_SECRET);
-      return token;
+      return {token};
     },
   },
 };

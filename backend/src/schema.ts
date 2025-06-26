@@ -24,9 +24,14 @@ export const typeDefs = gql`
     me: User
   }
 
+  type AuthPayload {
+  token: String!
+}
+
+
   type Mutation {
     joinEvent(eventId: ID!): User
     signup(name: String!, email: String!, password: String!): User!
-    signin(email: String!, password: String!): String!
+    signin(email: String!, password: String!): AuthPayload!
   }
 `;
