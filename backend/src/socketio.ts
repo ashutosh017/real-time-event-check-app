@@ -1,12 +1,12 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret";
+import { prisma } from "./db";
+import { JWT_SECRET } from "./config";
 
 const connectedUsers = new Map<string, { id: string; name: string }>();
 
-export function main() {
+export default function socketServer() {
   const httpServer = createServer();
   const io = new Server(httpServer, {
     cors: {
@@ -15,41 +15,69 @@ export function main() {
   });
 
   io.on("connection", (socket) => {
-    console.log("🔌 New socket connected:", socket.id);
+    console.log("New socket connected:", socket.id);
 
-    socket.on("register", (token: string) => {
+    socket.on("register", async (token: string) => {
       try {
-        const user = jwt.verify(token, JWT_SECRET) as {
+        token = token.replace("Bearer ", "");
+        console.log("token: ", token);
+        const userId = jwt.verify(token, JWT_SECRET) as {
           id: string;
-          name: string;
-          email: string;
         };
-
-        connectedUsers.set(socket.id, { id: user.id, name: user.name });
+        const user = await prisma.user.findFirst({ where: { id: userId.id } });
+        if (!user) {
+          throw new Error("user not found");
+        }
+        connectedUsers.set(socket.id, { id: userId.id, name: user.name });
         console.log(` Registered user ${user.name} (${user.id})`);
       } catch (err) {
         console.warn(" Invalid token on register");
+        console.log(err);
         socket.disconnect();
       }
     });
 
-    socket.on("joinRoom", (eventId: string) => {
-      const user = connectedUsers.get(socket.id);
+    socket.on(
+      "joinEvent",
+      async ({ eventId, id }: { eventId: string; id: string }) => {
+        console.log("join event");
+        const user = await prisma.user.findFirst({ where: { id } });
 
-      if (!user) {
-        console.warn("Unauthorized joinRoom attempt");
-        return;
+        if (!user) {
+          console.warn("Unauthorized joinRoom attempt");
+          return;
+        }
+
+        socket.join(eventId);
+        console.log(`👥 ${user.name} joined room ${eventId}`);
+
+        io.emit("userJoinedEvent", {
+          eventId,
+          userId: id,
+          name: user.name,
+        });
       }
+    );
+    socket.on(
+      "leaveRoom",
+      async ({ eventId, id }: { eventId: string; id: string }) => {
+        console.log("leave event");
+        const user = await prisma.user.findFirst({ where: { id } });
+        if (!user) {
+          console.warn("Unauthorized leave room attempt");
+          return;
+        }
 
-      socket.join(eventId);
-      console.log(`👥 ${user.name} joined room ${eventId}`);
+        socket.join(eventId);
+        console.log(`👥 ${user.name} left room ${eventId}`);
 
-      socket.to(eventId).emit("userJoinedEvent", {
-        eventId,
-        userId: user.id,
-        userName: user.name,
-      });
-    });
+        io.emit("userLeftEvent", {
+          eventId,
+          userId: id,
+          userName: user.name,
+        });
+      }
+    );
 
     socket.on("disconnect", () => {
       connectedUsers.delete(socket.id);

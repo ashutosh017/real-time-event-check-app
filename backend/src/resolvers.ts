@@ -46,7 +46,8 @@ export const resolvers = {
       context: { user?: { id: string } }
     ) => {
       const user = context.user;
-      if (!user) {
+      if (!user || !user.id) {
+        console.log("user: ",user)
         throw new Error("unauthorized");
       }
       const updatedUser = await prisma.user.update({
@@ -54,6 +55,30 @@ export const resolvers = {
         data: {
           events: {
             connect: { id: eventId },
+          },
+        },
+        include: {
+          events: true,
+        },
+      });
+
+      return updatedUser;
+    },
+    leaveEvent: async (
+      _parent: unknown,
+      { eventId }: { eventId: string },
+      context: { user?: { id: string } }
+    ) => {
+      const user = context.user;
+      if (!user || !user.id) {
+        console.log("user: ",user)
+        throw new Error("unauthorized");
+      }
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          events: {
+            disconnect: { id: eventId },
           },
         },
         include: {
@@ -94,7 +119,7 @@ export const resolvers = {
       });
       if (!user) return null;
       const token = jwt.sign(user.id, JWT_SECRET);
-      return {token};
+      return { token };
     },
   },
 };

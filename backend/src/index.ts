@@ -3,10 +3,13 @@ import { typeDefs } from "./schema";
 import jwt from "jsonwebtoken";
 import { resolvers } from "./resolvers";
 import { JWT_SECRET } from "./config";
+import socketServer from "./socketio";
+
 interface UserPayload {
-  email: string;
+  id: string;
 }
 
+socketServer();
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -14,17 +17,20 @@ const server = new ApolloServer({
     const authHeader = req.headers.authorization || "";
     const token = authHeader.replace("Bearer ", "");
 
-    let user: UserPayload | null = null;
-
+    let userId: UserPayload | null = null;
     if (token) {
       try {
-        user = jwt.verify(token, JWT_SECRET) as UserPayload;
+        userId = jwt.verify(token, JWT_SECRET) as UserPayload;
       } catch (err) {
         console.warn("Invalid token:", err);
       }
     }
 
-    return { user };
+    return {
+      user: {
+        id: userId,
+      },
+    };
   },
 });
 

@@ -19,12 +19,18 @@ export default function SignIn() {
         email,
         password,
       });
-      return res.data;
+      console.log("res1: ",res)
+      return res;
     },
   });
   const handleSignIn = async () => {
     try {
-        await signinMutation.mutateAsync({email,password})
+        const res = await signinMutation.mutateAsync({email,password})
+        console.log("res: ",res)
+        if(res.signin.token){
+            router.navigate("/events")
+        }
+
     } catch (err) {
       console.error("Sign in failed:", err);
     }

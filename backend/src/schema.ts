@@ -12,7 +12,7 @@ export const typeDefs = gql`
   }
 
   type Event {
-    id: ID!
+    id: String!
     name: String!
     location: String!
     startTime: Date!
@@ -25,12 +25,12 @@ export const typeDefs = gql`
   }
 
   type AuthPayload {
-  token: String!
-}
-
+    token: String!
+  }
 
   type Mutation {
-    joinEvent(eventId: ID!): User
+    joinEvent(eventId: String!): User
+    leaveEvent(eventId: String!): User
     signup(name: String!, email: String!, password: String!): User!
     signin(email: String!, password: String!): AuthPayload!
   }

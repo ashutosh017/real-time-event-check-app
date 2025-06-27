@@ -26,10 +26,6 @@ export default function SignUp() {
         console.log(error);
       }
     },
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
-    },
   });
 
   const handleSignup = async () => {

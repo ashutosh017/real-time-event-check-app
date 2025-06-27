@@ -17,3 +17,47 @@ export const SIGN_IN = gql`
     }
   }
 `;
+
+export const GET_ALL_EVENTS = gql`
+  query {
+    events {
+      id
+      name
+      location
+      startTime
+      attendees {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const JOIN_EVENT = gql`
+  mutation ($eventId: String!) {
+    joinEvent(eventId: $eventId) {
+      id
+      name
+      email
+    }
+  }
+`;
+export const LEAVE_EVENT = gql`
+  mutation ($eventId: String!) {
+    leaveEvent(eventId: $eventId) {
+      id
+      name
+      email
+    }
+  }
+`;
+
+export const GET_ME = gql`
+  query {
+    me {
+      id
+      name
+      email
+    }
+  }
+`;
